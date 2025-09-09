@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto-broker
+  labels:
+    app: mosquitto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mosquitto
+  template:
+    metadata:
+      labels:
+        app: mosquitto
+    spec:
+      containers:
+      - name: mosquitto
+        image: eclipse-mosquitto:2.0
+        ports:
+        - containerPort: 1883
+        - containerPort: 9001
+        volumeMounts:
+        - name: mosquitto-config
+          mountPath: /mosquitto/config/mosquitto.conf
+          subPath: mosquitto.conf
+      volumes:
+      - name: mosquitto-config
+        configMap:
+          name: mosquitto-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto-service
+spec:
+  selector:
+    app: mosquitto
+  ports:
+  - name: mqtt
+    port: 1883
+    targetPort: 1883
+  - name: websocket
+    port: 9001
+    targetPort: 9001
+  type: LoadBalancer
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-config
+data:
+  mosquitto.conf: |
+    persistence true
+    persistence_location /mosquitto/data/
+    log_dest stdout
+    log_type error
+    log_type warning
+    log_type notice
+    log_type information
+    listener 1883
+    allow_anonymous true
+    listener 9001
+    protocol websockets
+    allow_anonymous true
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matrix-publisher
+  labels:
+    app: matrix-publisher
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: matrix-publisher
+  template:
+    metadata:
+      labels:
+        app: matrix-publisher
+    spec:
+      containers:
+      - name: matrix-publisher
+        image: ioam08/matrix-publisher:latest
+        imagePullPolicy: Always
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        - name: MQTT_HOST
+          value: "mosquitto-service"
+        - name: MQTT_PORT
+          value: "1883"
+        - name: MQTT_TOPIC
+          value: "matrices/random"
+        - name: PUBLISH_INTERVAL
+          value: "10"
+        - name: MATRIX_ROWS
+          value: "3"
+        - name: MATRIX_COLS
+          value: "3"
+        - name: MIN_VALUE
+          value: "0"
+        - name: MAX_VALUE
+          value: "100"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"

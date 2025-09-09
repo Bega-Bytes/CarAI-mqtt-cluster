@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 Simplified Vehicle AI Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .config-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .config-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #1e3c72;
+        }
+        
+        .config-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .config-row label {
+            min-width: 120px;
+            font-weight: 500;
+        }
+        
+        .config-row input {
+            padding: 8px 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .config-row input:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 3px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .btn.climate { background: linear-gradient(135deg, #17a2b8, #138496); }
+        .btn.music { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        .btn.lights { background: linear-gradient(135deg, #ffc107, #e0a800); }
+        .btn.seats { background: linear-gradient(135deg, #dc3545, #bd2130); }
+        .btn.accept { background: linear-gradient(135deg, #28a745, #20c997); }
+        .btn.dismiss { background: linear-gradient(135deg, #dc3545, #e74c3c); }
+        
+        .controls-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            color: white;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .control-group {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .control-group h4 {
+            margin-bottom: 10px;
+            color: white;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 5px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .value-input {
+            width: 60px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin: 0 5px;
+        }
+        
+        .status {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.connected {
+            background: #2ed573;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .metrics-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .metric {
+            text-align: center;
+            color: white;
+        }
+        
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .car-state-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .panel-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #1e3c72;
+            text-align: center;
+        }
+        
+        .ai-recommendations {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 2px solid #28a745;
+        }
+        
+        .ai-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #28a745;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .recommendation-card {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #28a745;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        .recommendation-text {
+            font-size: 1.1em;
+            color: #155724;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        
+        .recommendation-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .no-recommendations {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+        
+        .state-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .state-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border-left: 4px solid #1e3c72;
+            transition: transform 0.3s ease;
+        }
+        
+        .state-card.active {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-left-color: #28a745;
+        }
+        
+        .state-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .state-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .message-log {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 25px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            grid-column: 1 / -1;
+        }
+        
+        .log-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #1e3c72;
+        }
+        
+        .log-entry {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 4px solid #1e3c72;
+            font-size: 0.9em;
+        }
+        
+        .log-entry.ai-log {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 0.8em;
+            margin-bottom: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Simplified Vehicle AI</h1>
+            <p>Natural AI recommendations based on your driving patterns</p>
+        </div>
+        
+        <div class="config-panel">
+            <div class="config-title">MQTT Connection</div>
+            <div class="config-row">
+                <label for="mqttHost">Host:</label>
+                <input type="text" id="mqttHost" value="localhost" placeholder="MQTT Host">
+                <label for="mqttPort">Port:</label>
+                <input type="number" id="mqttPort" value="9001" placeholder="WebSocket Port">
+                <button class="btn" onclick="connectMQTT()">Connect</button>
+                <button class="btn" onclick="disconnectMQTT()">Disconnect</button>
+            </div>
+            
+            <div class="controls-section">
+                <h3 style="margin-bottom: 15px; color: white;">Vehicle Controls</h3>
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <h4>🌡️ Climate Control</h4>
+                        <div class="control-buttons">
+                            <button class="btn climate" onclick="sendAction('climate_turn_on')">Turn On</button>
+                            <button class="btn climate" onclick="sendAction('climate_turn_off')">Turn Off</button>
+                            <button class="btn climate" onclick="sendAction('climate_increase')">Increase</button>
+                            <button class="btn climate" onclick="sendAction('climate_decrease')">Decrease</button>
+                            <button class="btn climate" onclick="sendActionWithValue('climate_set_temperature')">Set Temp</button>
+                            <input type="number" id="tempValue" class="value-input" placeholder="°C" min="16" max="30" value="22">
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <h4>🎵 Infotainment</h4>
+                        <div class="control-buttons">
+                            <button class="btn music" onclick="sendAction('infotainment_play')">Play</button>
+                            <button class="btn music" onclick="sendAction('infotainment_stop')">Stop</button>
+                            <button class="btn music" onclick="sendAction('infotainment_volume_up')">Vol +</button>
+                            <button class="btn music" onclick="sendAction('infotainment_volume_down')">Vol -</button>
+                            <button class="btn music" onclick="sendActionWithValue('infotainment_set_volume')">Set Vol</button>
+                            <input type="number" id="volumeValue" class="value-input" placeholder="%" min="0" max="100" value="50">
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <h4>💡 Lighting</h4>
+                        <div class="control-buttons">
+                            <button class="btn lights" onclick="sendAction('lights_turn_on')">Turn On</button>
+                            <button class="btn lights" onclick="sendAction('lights_turn_off')">Turn Off</button>
+                            <button class="btn lights" onclick="sendAction('lights_dim')">Dim</button>
+                            <button class="btn lights" onclick="sendAction('lights_brighten')">Brighten</button>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <h4>🪑 Seat Control</h4>
+                        <div class="control-buttons">
+                            <button class="btn seats" onclick="sendAction('seats_heat_on')">Heat On</button>
+                            <button class="btn seats" onclick="sendAction('seats_heat_off')">Heat Off</button>
+                            <button class="btn seats" onclick="sendActionWithValue('seats_adjust')">Adjust</button>
+                            <input type="number" id="seatValue" class="value-input" placeholder="Pos" min="1" max="10" value="5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status">
+            <div class="connection-status">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="connectionStatus">Disconnected</span>
+                <span style="margin-left: auto;" id="messageCount">Actions: 0 | AI: 0</span>
+            </div>
+        </div>
+        
+        <div class="metrics-row">
+            <div class="metric">
+                <div class="metric-value" id="totalActions">0</div>
+                <div class="metric-label">Total Actions</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="aiRecommendations">0</div>
+                <div class="metric-label">AI Suggestions</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="sessionTime">0s</div>
+                <div class="metric-label">Drive Session</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="lastUpdate">--</div>
+                <div class="metric-label">Last Update</div>
+            </div>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="car-state-panel">
+                <div class="panel-title">🚗 Current Car State</div>
+                <div class="state-grid">
+                    <div class="state-card" id="climateCard">
+                        <div class="state-label">Climate</div>
+                        <div class="state-value" id="climateState">OFF</div>
+                    </div>
+                    <div class="state-card" id="tempCard">
+                        <div class="state-label">Temperature</div>
+                        <div class="state-value" id="tempState">--°C</div>
+                    </div>
+                    <div class="state-card" id="infotainmentCard">
+                        <div class="state-label">Music</div>
+                        <div class="state-value" id="infotainmentState">OFF</div>
+                    </div>
+                    <div class="state-card" id="volumeCard">
+                        <div class="state-label">Volume</div>
+                        <div class="state-value" id="volumeState">--%</div>
+                    </div>
+                    <div class="state-card" id="lightsCard">
+                        <div class="state-label">Lights</div>
+                        <div class="state-value" id="lightsState">OFF</div>
+                    </div>
+                    <div class="state-card" id="seatsCard">
+                        <div class="state-label">Seat Heat</div>
+                        <div class="state-value" id="seatsState">OFF</div>
+                    </div>
+                    <div class="state-card" id="seatPosCard">
+                        <div class="state-label">Seat Pos</div>
+                        <div class="state-value" id="seatPosState">--</div>
+                    </div>
+                    <div class="state-card" id="brightnessCard">
+                        <div class="state-label">Brightness</div>
+                        <div class="state-value" id="brightnessState">--%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ai-recommendations">
+                <div class="ai-title">
+                    🤖 AI Assistant
+                </div>
+                <div id="recommendationsContainer">
+                    <div class="no-recommendations">
+                        AI is learning your preferences...<br>
+                        Start using vehicle controls!
+                    </div>
+                </div>
+            </div>
+            
+            <div class="message-log">
+                <div class="log-title">📋 Activity Log</div>
+                <div id="messageLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <script>
+        let client = null;
+        let isConnected = false;
+        let actionCount = 0;
+        let aiCount = 0;
+        let currentRecommendations = [];
+        let sessionStartTime = null;
+        let sessionTimer = null;
+        
+        // Car state
+        let carState = {
+            climate_on: false,
+            temperature: 22,
+            infotainment_on: false,
+            volume: 50,
+            lights_on: false,
+            brightness: 80,
+            seats_heated: false,
+            seat_position: 5
+        };
+        
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const status = document.getElementById('connectionStatus');
+            
+            isConnected = connected;
+            indicator.classList.toggle('connected', connected);
+            status.textContent = connected ? 'Connected' : 'Disconnected';
+        }
+        
+        function connectMQTT() {
+            const host = document.getElementById('mqttHost').value;
+            const port = parseInt(document.getElementById('mqttPort').value);
+            
+            if (client && isConnected) {
+                addLogEntry('Already connected');
+                return;
+            }
+            
+            const clientId = 'car-dashboard-' + Math.random().toString(36).substr(2, 9);
+            client = new Paho.MQTT.Client(host, port, clientId);
+            
+            client.onConnectionLost = (responseObject) => {
+                if (responseObject.errorCode !== 0) {
+                    updateConnectionStatus(false);
+                    addLogEntry('Connection lost: ' + responseObject.errorMessage);
+                }
+            };
+            
+            client.onMessageArrived = (message) => {
+                handleMQTTMessage(message);
+            };
+            
+            const connectOptions = {
+                onSuccess: () => {
+                    updateConnectionStatus(true);
+                    addLogEntry('✅ Connected to MQTT broker');
+                    
+                    // Subscribe to topics
+                    client.subscribe('vehicle/actions');
+                    client.subscribe('vehicle/recommendations');
+                    
+                    addLogEntry('📡 Subscribed to vehicle topics');
+                },
+                onFailure: (error) => {
+                    updateConnectionStatus(false);
+                    addLogEntry('❌ Connection failed: ' + error.errorMessage);
+                }
+            };
+            
+            client.connect(connectOptions);
+        }
+        
+        function disconnectMQTT() {
+            if (client && isConnected) {
+                client.disconnect();
+                updateConnectionStatus(false);
+                addLogEntry('🔌 Disconnected');
+            }
+        }
+        
+        function handleMQTTMessage(message) {
+            try {
+                const topic = message.destinationName;
+                const data = JSON.parse(message.payloadString);
+                
+                if (topic === 'vehicle/recommendations') {
+                    handleAIRecommendations(data);
+                }
+                
+            } catch (error) {
+                addLogEntry('❌ Error parsing message: ' + error.message);
+            }
+        }
+        
+        function handleAIRecommendations(data) {
+            if (data.type === 'ai_suggestion' && data.recommendations) {
+                aiCount++;
+                safeUpdateElement('aiRecommendations', aiCount);
+                safeUpdateElement('messageCount', `Actions: ${actionCount} | AI: ${aiCount}`);
+                
+                displayAIRecommendations(data.recommendations);
+                addLogEntry(`🤖 AI: ${data.recommendations.length} suggestions`, data.timestamp, 'ai-log');
+            }
+        }
+        
+        function displayAIRecommendations(recommendations) {
+            const container = document.getElementById('recommendationsContainer');
+            container.innerHTML = '';
+            
+            currentRecommendations = recommendations;
+            
+            recommendations.forEach((rec, index) => {
+                const card = document.createElement('div');
+                card.className = 'recommendation-card';
+                card.innerHTML = `
+                    <div class="recommendation-text">${rec.message}</div>
+                    <div class="recommendation-actions">
+                        <button class="btn accept" onclick="acceptRecommendation(${index})">✅ Yes</button>
+                        <button class="btn dismiss" onclick="dismissRecommendation(${index})">❌ No</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        function acceptRecommendation(index) {
+            const rec = currentRecommendations[index];
+            
+            // Execute the action
+            if (rec.value) {
+                sendAction(rec.action, rec.value);
+            } else {
+                sendAction(rec.action);
+            }
+            
+            addLogEntry(`✅ Accepted: ${rec.action}`, null, 'ai-log');
+            
+            // Remove recommendation
+            currentRecommendations.splice(index, 1);
+            displayAIRecommendations(currentRecommendations);
+        }
+        
+        function dismissRecommendation(index) {
+            const rec = currentRecommendations[index];
+            
+            addLogEntry(`❌ Dismissed: ${rec.action}`, null, 'ai-log');
+            
+            // Remove recommendation
+            currentRecommendations.splice(index, 1);
+            displayAIRecommendations(currentRecommendations);
+        }
+        
+        function sendAction(action, value = null) {
+            if (!isConnected) {
+                addLogEntry('❌ Not connected to MQTT');
+                return;
+            }
+            
+            const actionData = {
+                action: action,
+                timestamp: new Date().toISOString(),
+                driver_id: 0,
+                value: value,
+                source: 'dashboard'
+            };
+            
+            // Publish action
+            const message = new Paho.MQTT.Message(JSON.stringify(actionData));
+            message.destinationName = 'vehicle/actions';
+            client.send(message);
+            
+            // Update local state
+            updateLocalState(action, value);
+            
+            // Update UI
+            actionCount++;
+            safeUpdateElement('totalActions', actionCount);
+            safeUpdateElement('messageCount', `Actions: ${actionCount} | AI: ${aiCount}`);
+            safeUpdateElement('lastUpdate', new Date().toLocaleTimeString());
+            
+            addLogEntry(`🚗 ${action}${value ? ` (${value})` : ''}`);
+            
+            // Start session timer if first action
+            if (actionCount === 1) {
+                startSessionTimer();
+            }
+        }
+        
+        function sendActionWithValue(action) {
+            let value;
+            if (action === 'climate_set_temperature') {
+                value = parseInt(document.getElementById('tempValue').value) || 22;
+            } else if (action === 'infotainment_set_volume') {
+                value = parseInt(document.getElementById('volumeValue').value) || 50;
+            } else if (action === 'seats_adjust') {
+                value = parseInt(document.getElementById('seatValue').value) || 5;
+            }
+            sendAction(action, value);
+        }
+        
+        function updateLocalState(action, value) {
+            switch(action) {
+                case 'climate_turn_on':
+                    carState.climate_on = true;
+                    safeUpdateElement('climateState', 'ON');
+                    document.getElementById('climateCard').classList.add('active');
+                    break;
+                case 'climate_turn_off':
+                    carState.climate_on = false;
+                    safeUpdateElement('climateState', 'OFF');
+                    document.getElementById('climateCard').classList.remove('active');
+                    break;
+                case 'climate_set_temperature':
+                    carState.temperature = value || 22;
+                    safeUpdateElement('tempState', carState.temperature + '°C');
+                    break;
+                case 'climate_increase':
+                    carState.temperature = Math.min(carState.temperature + 1, 30);
+                    safeUpdateElement('tempState', carState.temperature + '°C');
+                    break;
+                case 'climate_decrease':
+                    carState.temperature = Math.max(carState.temperature - 1, 16);
+                    safeUpdateElement('tempState', carState.temperature + '°C');
+                    break;
+                case 'infotainment_play':
+                    carState.infotainment_on = true;
+                    safeUpdateElement('infotainmentState', 'ON');
+                    document.getElementById('infotainmentCard').classList.add('active');
+                    break;
+                case 'infotainment_stop':
+                    carState.infotainment_on = false;
+                    safeUpdateElement('infotainmentState', 'OFF');
+                    document.getElementById('infotainmentCard').classList.remove('active');
+                    break;
+                case 'infotainment_set_volume':
+                    carState.volume = value || 50;
+                    safeUpdateElement('volumeState', carState.volume + '%');
+                    break;
+                case 'infotainment_volume_up':
+                    carState.volume = Math.min(carState.volume + 10, 100);
+                    safeUpdateElement('volumeState', carState.volume + '%');
+                    break;
+                case 'infotainment_volume_down':
+                    carState.volume = Math.max(carState.volume - 10, 0);
+                    safeUpdateElement('volumeState', carState.volume + '%');
+                    break;
+                case 'lights_turn_on':
+                    carState.lights_on = true;
+                    safeUpdateElement('lightsState', 'ON');
+                    document.getElementById('lightsCard').classList.add('active');
+                    break;
+                case 'lights_turn_off':
+                    carState.lights_on = false;
+                    safeUpdateElement('lightsState', 'OFF');
+                    document.getElementById('lightsCard').classList.remove('active');
+                    break;
+                case 'lights_dim':
+                    carState.brightness = Math.max(carState.brightness - 20, 0);
+                    safeUpdateElement('brightnessState', carState.brightness + '%');
+                    break;
+                case 'lights_brighten':
+                    carState.brightness = Math.min(carState.brightness + 20, 100);
+                    safeUpdateElement('brightnessState', carState.brightness + '%');
+                    break;
+                case 'seats_heat_on':
+                    carState.seats_heated = true;
+                    safeUpdateElement('seatsState', 'ON');
+                    document.getElementById('seatsCard').classList.add('active');
+                    break;
+                case 'seats_heat_off':
+                    carState.seats_heated = false;
+                    safeUpdateElement('seatsState', 'OFF');
+                    document.getElementById('seatsCard').classList.remove('active');
+                    break;
+                case 'seats_adjust':
+                    carState.seat_position = value || 5;
+                    safeUpdateElement('seatPosState', carState.seat_position);
+                    break;
+            }
+        }
+        
+        function startSessionTimer() {
+            sessionStartTime = Date.now();
+            
+            sessionTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+                safeUpdateElement('sessionTime', elapsed + 's');
+            }, 1000);
+        }
+        
+        function safeUpdateElement(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+        
+        function addLogEntry(message, timestamp = null, type = '') {
+            const logContainer = document.getElementById('messageLog');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            
+            const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+            logEntry.innerHTML = `<div class="timestamp">${time}</div><div>${message}</div>`;
+            
+            logContainer.insertBefore(logEntry, logContainer.firstChild);
+            
+            // Keep only last 10 entries
+            while (logContainer.children.length > 10) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+        
+        // Auto-connect on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                connectMQTT();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

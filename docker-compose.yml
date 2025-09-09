@@ -1,0 +1,61 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto-broker
+    ports:
+      - "1883:1883"   # external port 1883 -> container port 1883 (MQTT TCP)
+      - "9001:9001"   # external port 9001 -> container port 9001 (MQTT WebSocket)
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+    networks: [mqtt_network]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/broker/version' -C 1 -W 2 >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  matrix-publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: matrix-publisher
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      MQTT_TOPIC: matrices/random
+      PUBLISH_INTERVAL: "10"
+      MATRIX_ROWS: "3"
+      MATRIX_COLS: "3"
+      MIN_VALUE: "0"
+      MAX_VALUE: "100"
+      PYTHONUNBUFFERED: "1"  # Add this for better logging
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    networks: [mqtt_network]
+    restart: unless-stopped
+    logging:  # Add this for better log management
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  mqtt-subscriber:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt-subscriber
+    command: ["sh", "-lc", "mosquitto_sub -h mosquitto -t 'matrices/random' -v"]
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    networks: [mqtt_network]
+    restart: "no"
+
+networks:
+  mqtt_network:
+    driver: bridge
+
+volumes:
+  mosquitto_data:
+  mosquitto_logs:
